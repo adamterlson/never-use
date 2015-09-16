@@ -4,6 +4,7 @@ let React = require('react-native');
 let {
   AppRegistry,
   DatePickerIOS,
+  SwitchIOS,
   StyleSheet,
   Text,
   ScrollView,
@@ -21,12 +22,18 @@ let NeverUse = React.createClass({
     };
 
     return {
-      quietTimes: [quiet]
+      enabled: false,
+      quietTimes: [quiet],
+      dingsPerHour: 1
     }
   },
 
+  _onEnabledChange: function (toggle) {
+    this.setState({ enabled: toggle });
+  },
+
   _onTimeRangeChange: function (i, newTime) {
-    var updateQuery = {};
+    let updateQuery = {};
     updateQuery[i] = { '$set': newTime };
 
     this.setState({
@@ -38,6 +45,13 @@ let NeverUse = React.createClass({
     return (
       <ScrollView>
         <View>
+          <Text>Enabled</Text>
+          <SwitchIOS
+            onValueChange={this._onEnabledChange}
+            value={this.state.enabled} />
+        </View>
+        <View>
+          <Text>Quiet Times</Text>
           { 
             this.state.quietTimes.map((time, i) => {
               return ( 
@@ -69,13 +83,13 @@ let TimeRangePicker = React.createClass({
     };
   },
 
-  onStartDateChange: function(date) {
+  _onStartDateChange: function(date) {
     this.setState({ startDate: date}, () => {
       this.props.onTimeRangeChange(this.state);
     });
   },
 
-  onEndDateChange: function(date) {
+  _onEndDateChange: function(date) {
     this.setState({ endDate: date}, () => {
       this.props.onTimeRangeChange(this.state);
     });
@@ -97,7 +111,7 @@ let TimeRangePicker = React.createClass({
           <DatePickerIOS
             date={this.state.startDate}
             mode="time"
-            onDateChange={this.onStartDateChange}
+            onDateChange={this._onStartDateChange}
             minuteInterval={10}
           />
 
@@ -105,7 +119,7 @@ let TimeRangePicker = React.createClass({
           <DatePickerIOS
             date={this.state.endDate}
             mode="time"
-            onDateChange={this.onEndDateChange}
+            onDateChange={this._onEndDateChange}
             minuteInterval={10}
             minimumDate={this.state.startDate}
           />
