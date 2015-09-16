@@ -40,19 +40,13 @@ let NeverUse = React.createClass({
         <View>
           { 
             this.state.quietTimes.map((time, i) => {
-    let startTimeLabel = 'Start Time: ' + 
-                         time.startDate.toLocaleDateString() +
-                         ' ' +
-                         time.startDate.toLocaleTimeString();
               return ( 
-                <View>
-                <Heading label={startTimeLabel} />
                 <TimeRangePicker 
                 startDate={time.startDate}
                 endDate={time.endDate}
                 onTimeRangeChange={this._onTimeRangeChange.bind(this, i)}
-                key={i} /></View> )
-            
+                key={i} />
+              );
             })
           }
         </View>
