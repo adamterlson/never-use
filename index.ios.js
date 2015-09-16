@@ -4,6 +4,7 @@ let React = require('react-native');
 let {
   AppRegistry,
   DatePickerIOS,
+  SliderIOS,
   SwitchIOS,
   StyleSheet,
   Text,
@@ -41,6 +42,10 @@ let NeverUse = React.createClass({
     });
   },
 
+  _onDingsPerHourChange: function (val) {
+    this.setState({ dingsPerHour: Math.round(val) });
+  },
+
   render: function() {
     return (
       <ScrollView>
@@ -63,6 +68,13 @@ let NeverUse = React.createClass({
               );
             })
           }
+        </View>
+        <View>
+          <Text>Dings Per Hour {this.state.dingsPerHour}</Text>
+          <SliderIOS
+            minimumValue={1}
+            maximumValue={30}
+            onValueChange={this._onDingsPerHourChange} />
         </View>
       </ScrollView>
     );
