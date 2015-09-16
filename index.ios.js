@@ -10,11 +10,13 @@ let {
   Text,
   ScrollView,
   View,
+  AsyncStorage,
 } = React;
+const STORAGE_KEY = '@AsyncStorageExample:key';
 
 let NeverUse = React.createClass({
   getInitialState: function () {
-    let startDate = roundMinutes(new Date());
+    let startDate = new Date();
     let endDate = addHours(startDate, 1);
 
     let quiet = {
@@ -29,21 +31,43 @@ let NeverUse = React.createClass({
     }
   },
 
+  componentDidMount: function() {
+    this._loadInitialState().done();
+  },
+
+  _loadInitialState: async function() {
+    try {
+      let value = await AsyncStorage.getItem(STORAGE_KEY);
+      if (value !== null){
+        let state = JSON.parse(value);
+        this.setState(state);
+      }
+    } catch (error) {
+      console.log('AsyncStorage error: ' + error.message);
+    }
+  },
+
   _onEnabledChange: function (toggle) {
-    this.setState({ enabled: toggle });
+    this._update({ enabled: toggle });
   },
 
   _onTimeRangeChange: function (i, newTime) {
     let updateQuery = {};
     updateQuery[i] = { '$set': newTime };
 
-    this.setState({
+    this._update({
       quietTimes: React.addons.update(this.state.quietTimes, updateQuery)
     });
   },
 
   _onDingsPerHourChange: function (val) {
-    this.setState({ dingsPerHour: Math.round(val) });
+    this._update({ dingsPerHour: Math.round(val) });
+  },
+
+  _update: function (query) {
+    this.setState(query, function () {
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+    });
   },
 
   render: function() {
@@ -61,10 +85,10 @@ let NeverUse = React.createClass({
             this.state.quietTimes.map((time, i) => {
               return ( 
                 <TimeRangePicker 
-                startDate={time.startDate}
-                endDate={time.endDate}
+                startDate={new Date(time.startDate)}
+                endDate={new Date(time.endDate)}
                 onTimeRangeChange={this._onTimeRangeChange.bind(this, i)}
-                key={i} />
+                key={time.startDate + time.endDate} />
               );
             })
           }
@@ -74,6 +98,7 @@ let NeverUse = React.createClass({
           <SliderIOS
             minimumValue={1}
             maximumValue={30}
+            value={this.state.dingsPerHour}
             onValueChange={this._onDingsPerHourChange} />
         </View>
       </ScrollView>
