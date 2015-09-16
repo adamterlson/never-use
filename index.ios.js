@@ -1,42 +1,37 @@
 'use strict';
 
-var React = require('react-native');
-var {
+let React = require('react-native');
+let {
   AppRegistry,
   DatePickerIOS,
   StyleSheet,
   Text,
-  TextInput,
   ScrollView,
   View,
 } = React;
 
-var NeverUse = React.createClass({
+let NeverUse = React.createClass({
   getInitialState: function () {
-    var startDate = roundMinutes(new Date());
-    var endDate = addHours(startDate, 1);
+    let startDate = roundMinutes(new Date());
+    let endDate = addHours(startDate, 1);
 
-    function addHours(originalDate, hours) {
-      var date = new Date(originalDate.getTime());
-      date.setHours(date.getHours()+hours);
-      return date;
-    }
-
-    function roundMinutes(date) {
-      date.setHours(date.getHours() + Math.round(date.getMinutes()/60));
-      date.setMinutes(0);
-      return date;
-    }
-
-    var quiet = {
+    let quiet = {
       startDate,
-      endDate,
-      timeZoneOffsetInHours: (-1) * startDate.getTimezoneOffset() / 60
+      endDate
     };
 
     return {
       quietTimes: [quiet]
     }
+  },
+
+  _onTimeRangeChange: function (i, newTime) {
+    var updateQuery = {};
+    updateQuery[i] = { '$set': newTime };
+
+    this.setState({
+      quietTimes: React.addons.update(this.state.quietTimes, updateQuery)
+    });
   },
 
   render: function() {
@@ -45,11 +40,18 @@ var NeverUse = React.createClass({
         <View>
           { 
             this.state.quietTimes.map((time, i) => {
-              return ( <TimeRangePicker 
+    let startTimeLabel = 'Start Time: ' + 
+                         time.startDate.toLocaleDateString() +
+                         ' ' +
+                         time.startDate.toLocaleTimeString();
+              return ( 
+                <View>
+                <Heading label={startTimeLabel} />
+                <TimeRangePicker 
                 startDate={time.startDate}
                 endDate={time.endDate}
-                timeZoneOffsetInHours={time.timeZoneOffsetInHours}
-                key={i} /> )
+                onTimeRangeChange={this._onTimeRangeChange.bind(this, i)}
+                key={i} /></View> )
             
             })
           }
@@ -59,11 +61,10 @@ var NeverUse = React.createClass({
   },
 });
 
-var TimeRangePicker = React.createClass({
+let TimeRangePicker = React.createClass({
   propTypes: {
     startDate: React.PropTypes.instanceOf(Date),
     endDate: React.PropTypes.instanceOf(Date),
-    timeZoneOffsetInHours: React.PropTypes.number,
     onTimeRangeChange: React.PropTypes.func
   },
 
@@ -71,34 +72,37 @@ var TimeRangePicker = React.createClass({
     return {
       startDate: this.props.startDate,
       endDate: this.props.endDate,
-      timeZoneOffsetInHours: this.props.timeZoneOffsetInHours
     };
   },
 
   onStartDateChange: function(date) {
-    this.setState({ startDate: date});
+    this.setState({ startDate: date}, () => {
+      this.props.onTimeRangeChange(this.state);
+    });
   },
 
   onEndDateChange: function(date) {
-    this.setState({ endDate: date});
+    this.setState({ endDate: date}, () => {
+      this.props.onTimeRangeChange(this.state);
+    });
   },
 
   render: function () {
-    var startTimeLabel = 'Start Time: ' + 
-              this.state.startDate.toLocaleDateString() +
-              ' ' +
-              this.state.startDate.toLocaleTimeString();
-    var endTimeLabel = 'End Time: ' +
-              this.state.endDate.toLocaleDateString() +
-              ' ' +
-              this.state.endDate.toLocaleTimeString();
+    let startTimeLabel = 'Start Time: ' + 
+                         this.state.startDate.toLocaleDateString() +
+                         ' ' +
+                         this.state.startDate.toLocaleTimeString();
+    let endTimeLabel = 'End Time: ' +
+                         this.state.endDate.toLocaleDateString() +
+                         ' ' +
+                         this.state.endDate.toLocaleTimeString();
+
     return (
         <View>
           <Heading label={startTimeLabel} />
           <DatePickerIOS
             date={this.state.startDate}
             mode="time"
-            timeZoneOffsetInMinutes={this.state.timeZoneOffsetInHours * 60}
             onDateChange={this.onStartDateChange}
             minuteInterval={10}
           />
@@ -107,7 +111,6 @@ var TimeRangePicker = React.createClass({
           <DatePickerIOS
             date={this.state.endDate}
             mode="time"
-            timeZoneOffsetInMinutes={this.state.timeZoneOffsetInHours * 60}
             onDateChange={this.onEndDateChange}
             minuteInterval={10}
             minimumDate={this.state.startDate}
@@ -117,7 +120,7 @@ var TimeRangePicker = React.createClass({
   }
 });
 
-var WithLabel = React.createClass({
+let WithLabel = React.createClass({
   render: function() {
     return (
       <View style={styles.labelContainer}>
@@ -132,7 +135,7 @@ var WithLabel = React.createClass({
   }
 });
 
-var Heading = React.createClass({
+let Heading = React.createClass({
   render: function() {
     return (
       <View style={styles.headingContainer}>
@@ -145,7 +148,7 @@ var Heading = React.createClass({
 });
 
 
-var styles = StyleSheet.create({
+let styles = StyleSheet.create({
   textinput: {
     height: 26,
     width: 50,
@@ -177,3 +180,16 @@ var styles = StyleSheet.create({
 });
 
 AppRegistry.registerComponent('NeverUse', () => NeverUse);
+
+
+function addHours(originalDate, hours) {
+  let date = new Date(originalDate.getTime());
+  date.setHours(date.getHours()+hours);
+  return date;
+}
+
+function roundMinutes(date) {
+  date.setHours(date.getHours() + Math.round(date.getMinutes()/60));
+  date.setMinutes(0);
+  return date;
+}
