@@ -1,18 +1,33 @@
-'use strict';
-
 let React = require('react-native');
 let {
   AppRegistry,
   DatePickerIOS,
   SliderIOS,
   SwitchIOS,
+  TouchableHighlight,
   StyleSheet,
   Text,
   ScrollView,
   View,
   AsyncStorage,
+  PushNotificationIOS
 } = React;
-const STORAGE_KEY = '@AsyncStorageExample:key';
+let STORAGE_KEY = '@AsyncStorageExample:key';
+
+var Button = React.createClass({
+  render: function() {
+    return (
+      <TouchableHighlight
+        underlayColor={'white'}
+        style={styles.button}
+        onPress={this.props.onPress}>
+        <Text style={styles.buttonLabel}>
+          {this.props.label}
+        </Text>
+      </TouchableHighlight>
+    );
+  }
+});
 
 let NeverUse = React.createClass({
   getInitialState: function () {
@@ -27,7 +42,7 @@ let NeverUse = React.createClass({
     return {
       enabled: false,
       quietTimes: [quiet],
-      dingsPerHour: 1
+      dingsPerHour: 10
     }
   },
 
@@ -36,6 +51,7 @@ let NeverUse = React.createClass({
   },
 
   _loadInitialState: async function() {
+    AsyncStorage.clear();
     try {
       let value = await AsyncStorage.getItem(STORAGE_KEY);
       if (value !== null){
@@ -70,10 +86,35 @@ let NeverUse = React.createClass({
     });
   },
 
-  render: function() {
+  _addNewQuietTime: function () {
+    let quietTimes = this.state.quietTimes;
+    let updated = React.addons.update(this.state.quietTimes, { $push: quietTimes.slice(-1) });
+
+    this.setState({ quietTimes: updated });
+  },
+
+  _removeQuietTime: function (i) {
+    let quietTimes = this.state.quietTimes;
+
+    let updated = React.addons.update(this.state.quietTimes, {$splice: [[i, 1]] });
+
+    this.setState({ quietTimes: updated });
+  },
+
+  _showPermissions: function() {
+    PushNotificationIOS.checkPermissions((permissions) => {
+      this.setState({ permissions });
+    });
+  },
+
+  render: function() {    
     return (
       <ScrollView>
         <View>
+          <Button
+            onPress={this._showPermissions.bind(this)}
+            label="Show enabled permissions"
+          />
           <Text>Enabled</Text>
           <SwitchIOS
             onValueChange={this._onEnabledChange}
@@ -83,15 +124,28 @@ let NeverUse = React.createClass({
           <Text>Quiet Times</Text>
           { 
             this.state.quietTimes.map((time, i) => {
+              let removeButton = this.state.quietTimes.length > 1 ? (<Button
+                  onPress={() => this._removeQuietTime(i)}
+                  label="Remove Item"
+                />) : null;
+
               return ( 
-                <TimeRangePicker 
-                startDate={new Date(time.startDate)}
-                endDate={new Date(time.endDate)}
-                onTimeRangeChange={this._onTimeRangeChange.bind(this, i)}
-                key={time.startDate + time.endDate} />
+                <View>
+                  <TimeRangePicker 
+                  startDate={new Date(time.startDate)}
+                  endDate={new Date(time.endDate)}
+                  onTimeRangeChange={this._onTimeRangeChange.bind(this, i)}
+                  key={time.startDate + time.endDate + i} />
+
+                  {removeButton}
+                </View>
               );
             })
           }
+          <Button
+            onPress={this._addNewQuietTime.bind(this)}
+            label="Add New"
+          />
         </View>
         <View>
           <Text>Dings Per Hour {this.state.dingsPerHour}</Text>
@@ -108,9 +162,9 @@ let NeverUse = React.createClass({
 
 let TimeRangePicker = React.createClass({
   propTypes: {
-    startDate: React.PropTypes.instanceOf(Date),
-    endDate: React.PropTypes.instanceOf(Date),
-    onTimeRangeChange: React.PropTypes.func
+    startDate: React.PropTypes.instanceOf(Date).isRequired,
+    endDate: React.PropTypes.instanceOf(Date).isRequired,
+    onTimeRangeChange: React.PropTypes.func.isRequired
   },
 
   getInitialState: function() {
