@@ -54,7 +54,6 @@ let NeverUse = React.createClass({
   },
 
   _loadInitialState: async function() {
-    AsyncStorage.clear();
     try {
       let value = await AsyncStorage.getItem(STORAGE_KEY);
       if (value !== null){
@@ -85,10 +84,13 @@ let NeverUse = React.createClass({
 
   _update: function (query) {
     this.setState(query, () => {
+      var update = {};
       if (this.state.enabled) {
-        this.setState({ scheduledDings: MakeDings(this.state.dingsPerHour) });
+        update = { scheduledDings: MakeDings(this.state.dingsPerHour) };
       }
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+      this.setState(update, function () {
+        AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+      });
     });
   },
 
@@ -165,7 +167,7 @@ let NeverUse = React.createClass({
           <Text>this { this.state.scheduledDings.length }</Text>
           {
             this.state.scheduledDings.map((time) => {
-              return (<Text>Time:{time.toISOString()}</Text>);
+              return (<Text>Time:{new Date(time).toISOString()}</Text>);
             })
           }
         </View>
