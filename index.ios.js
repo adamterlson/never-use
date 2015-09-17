@@ -53,7 +53,12 @@ let NeverUse = React.createClass({
     this._loadInitialState().done();
   },
 
+  componentWillUpdate: function (nextProps, nextState) {
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
+  },
+
   _loadInitialState: async function() {
+    //AsyncStorage.clear();
     try {
       let value = await AsyncStorage.getItem(STORAGE_KEY);
       if (value !== null){
@@ -84,13 +89,9 @@ let NeverUse = React.createClass({
 
   _update: function (query) {
     this.setState(query, () => {
-      var update = {};
       if (this.state.enabled) {
-        update = { scheduledDings: MakeDings(this.state.dingsPerHour) };
+        this.setState({ scheduledDings: MakeDings(this.state.dingsPerHour) });
       }
-      this.setState(update, function () {
-        AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
-      });
     });
   },
 
