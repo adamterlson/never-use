@@ -1,4 +1,5 @@
 let React = require('react-native');
+let moment = require('moment');
 let {
   AppRegistry,
   DatePickerIOS,
@@ -13,6 +14,7 @@ let {
   PushNotificationIOS
 } = React;
 let STORAGE_KEY = '@AsyncStorageExample:key';
+
 
 var Button = React.createClass({
   render: function() {
@@ -42,7 +44,8 @@ let NeverUse = React.createClass({
     return {
       enabled: false,
       quietTimes: [quiet],
-      dingsPerHour: 10
+      dingsPerHour: 10,
+      scheduledDings: []
     }
   },
 
@@ -81,7 +84,10 @@ let NeverUse = React.createClass({
   },
 
   _update: function (query) {
-    this.setState(query, function () {
+    this.setState(query, () => {
+      if (this.state.enabled) {
+        this.setState({ scheduledDings: MakeDings(this.state.dingsPerHour) });
+      }
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
     });
   },
@@ -154,6 +160,14 @@ let NeverUse = React.createClass({
             maximumValue={30}
             value={this.state.dingsPerHour}
             onValueChange={this._onDingsPerHourChange} />
+        </View>
+        <View>
+          <Text>this { this.state.scheduledDings.length }</Text>
+          {
+            this.state.scheduledDings.map((time) => {
+              return (<Text>Time:{time.toISOString()}</Text>);
+            })
+          }
         </View>
       </ScrollView>
     );
@@ -291,4 +305,18 @@ function roundMinutes(date) {
   date.setHours(date.getHours() + Math.round(date.getMinutes()/60));
   date.setMinutes(0);
   return date;
+}
+
+function MakeDings(dingsPerHour, limit = 10) {
+  var arr = [];
+  var startOfDay = moment();
+  var interval = (1 * 60 * 60 * 1000) / dingsPerHour;
+  var current = startOfDay.clone(); 
+  var i = 0;
+
+  while(i++ < limit) {
+    arr.push(current.add(interval, 'milliseconds').clone());
+  }
+
+  return arr;
 }
