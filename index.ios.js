@@ -49,8 +49,27 @@ let NeverUse = React.createClass({
     }
   },
 
+  componentWillMount: function() {
+    PushNotificationIOS.addEventListener('notification', this._onNotification);
+  },
+
+  componentWillUnmount: function() {
+    PushNotificationIOS.removeEventListener('notification', this._onNotification);
+  },
+
+  _onNotification: function(notification) {
+    this.setState({
+      message: notification.getData().message,
+    });
+  },
+
   componentDidMount: function() {
     this._loadInitialState().done();
+    PushNotificationIOS.requestPermissions(function(err, data) {
+        if (err) {
+            console.log("Could not register for push");
+        }
+    });
   },
 
   componentWillUpdate: function (nextProps, nextState) {
@@ -116,14 +135,33 @@ let NeverUse = React.createClass({
     });
   },
 
-  render: function() {    
+  _testNotification: function () {
+    var foo = PushNotificationIOS.scheduleLocalNotification({
+      fireDate: moment().add(3, 's').toISOString(),
+      alertBody: 'Pay attention.'
+    });
+    debugger;
+  },
+
+  render: function() {
     return (
       <ScrollView>
         <View>
+          <Text style={styles.welcome}>
+            {this.state.message}
+          </Text>
           <Button
             onPress={this._showPermissions.bind(this)}
             label="Show enabled permissions"
           />
+        <Button
+          onPress={() => PushNotificationIOS.setApplicationIconBadgeNumber(42)}
+          label="Set app's icon badge to 42"
+        />
+        <Button
+          onPress={this._testNotification}
+          label="TEST"
+        />
           <Text>Enabled</Text>
           <SwitchIOS
             onValueChange={this._onEnabledChange}
